@@ -1,0 +1,24 @@
+/* src/App.css */
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-header {
+  background: #001529;
+  padding: 0 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app-header h1 {
+  color: white;
+  margin: 0;
+  line-height: 64px;
+  text-align: center;
+}
+
+.app-content {
+  padding: 24px;
+  background: #fff;
+}

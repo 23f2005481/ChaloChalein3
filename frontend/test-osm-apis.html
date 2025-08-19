@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap APIs Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        button { padding: 8px 16px; margin: 5px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #40a9ff; }
+        .error { color: #f5222d; }
+        .success { color: #52c41a; }
+    </style>
+</head>
+<body>
+    <h1>OpenStreetMap APIs Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Nominatim Geocoding Test</h3>
+        <input type="text" id="geocodeQuery" value="Paris" placeholder="Enter city name">
+        <button onclick="testGeocoding()">Test Geocoding</button>
+        <div id="geocodeResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. OSRM Routing Test</h3>
+        <input type="text" id="origin" value="48.8566,2.3522" placeholder="Origin (lat,lon)">
+        <input type="text" id="destination" value="48.8606,2.3376" placeholder="Destination (lat,lon)">
+        <button onclick="testRouting()">Test Routing</button>
+        <div id="routingResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Overpass POI Test</h3>
+        <input type="text" id="poiQuery" value="Paris" placeholder="Enter city name">
+        <button onclick="testPOIs()">Test POI Recommendations</button>
+        <div id="poiResult" class="result"></div>
+    </div>
+
+    <script>
+        async function testGeocoding() {
+            const query = document.getElementById('geocodeQuery').value;
+            const resultDiv = document.getElementById('geocodeResult');
+            
+            try {
+                resultDiv.innerHTML = 'Testing...';
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=3&addressdetails=1`);
+                const data = await response.json();
+                
+                if (data.length > 0) {
+                    resultDiv.innerHTML = `<div class="success">✅ Success! Found ${data.length} locations:</div>
+                        <pre>${JSON.stringify(data.slice(0, 2), null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ No locations found</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testRouting() {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const resultDiv = document.getElementById('routingResult');
+            
+            try {
+                resultDiv.innerHTML = 'Testing...';
+                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${origin};${destination}?overview=full&geometries=geojson`);
+                const data = await response.json();
+                
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    resultDiv.innerHTML = `<div class="success">✅ Success! Route found:</div>
+                        <div>Distance: ${(route.distance/1000).toFixed(1)}km</div>
+                        <div>Duration: ${Math.round(route.duration/60)} minutes</div>
+                        <pre>${JSON.stringify({distance: route.distance, duration: route.duration}, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ No route found</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPOIs() {
+            const query = document.getElementById('poiQuery').value;
+            const resultDiv = document.getElementById('poiResult');
+            
+            try {
+                resultDiv.innerHTML = 'Testing...';
+                
+                // First get bbox from Nominatim
+                const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`);
+                const geocodeData = await geocodeResponse.json();
+                
+                if (!geocodeData.length || !geocodeData[0].boundingbox) {
+                    resultDiv.innerHTML = '<div class="error">❌ Could not get bounding box for city</div>';
+                    return;
+                }
+                
+                const bbox = geocodeData[0].boundingbox;
+                const [minLat, maxLat, minLon, maxLon] = bbox;
+                
+                // Build Overpass query
+                const overpassQuery = `[out:json][timeout:25];
+                    (node["tourism"="attraction"](area:${minLat},${minLon},${maxLat},${maxLon});
+                     node["tourism"="hotel"](area:${minLat},${minLon},${maxLat},${maxLon});
+                     node["amenity"="restaurant"](area:${minLat},${minLon},${maxLat},${maxLon}));
+                    out center 20;`;
+                
+                const overpassResponse = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: overpassQuery
+                });
+                
+                const overpassData = await overpassResponse.json();
+                
+                if (overpassData.elements && overpassData.elements.length > 0) {
+                    const items = overpassData.elements.slice(0, 5).map(el => ({
+                        name: el.tags?.name || 'Unnamed',
+                        category: el.tags?.tourism || el.tags?.amenity || 'place',
+                        lat: el.lat,
+                        lon: el.lon
+                    }));
+                    
+                    resultDiv.innerHTML = `<div class="success">✅ Success! Found ${overpassData.elements.length} POIs:</div>
+                        <pre>${JSON.stringify(items, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ No POIs found</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+/* Theme Toggle Button Styles */
+.theme-toggle {
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0;
+}
+
+.theme-toggle-button:hover {
+  transform: rotate(30deg);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.theme-icon {
+  font-size: 18px;
+  color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .theme-toggle-button {
+  background: rgba(108, 99, 255, 0.15);
+  border-color: rgba(108, 99, 255, 0.3);
+}
+
+[data-theme="dark"] .theme-toggle-button:hover {
+  background: rgba(108, 99, 255, 0.25);
+  box-shadow: 0 0 10px rgba(108, 99, 255, 0.3);
+}
+
+[data-theme="light"] .theme-toggle {
+  color: #001529;
+}
+
+[data-theme="light"] .theme-toggle-button {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .theme-toggle-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .theme-icon {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+/* Add a pulse animation for the initial load */
+@keyframes themePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.theme-toggle-button {
+  animation: themePulse 1.5s ease-in-out 1;
+} 

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .api-section {
+      flex: 1 1 400px;
+      margin: 10px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    button {
+      padding: 8px 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      box-sizing: border-box;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .status {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #dff0d8;
+      color: #3c763d;
+    }
+    .error {
+      background-color: #f2dede;
+      color: #a94442;
+    }
+  </style>
+</head>
+<body>
+  <h1>API Test Page</h1>
+  <p>This page tests connections to the backend API server. Make sure the server is running at <code>http://localhost:5000</code>.</p>
+  
+  <div id="server-status"></div>
+  
+  <div class="container">
+    <!-- Weather API -->
+    <div class="api-section">
+      <h2>Weather API</h2>
+      <div>
+        <label for="city">City Name:</label>
+        <input type="text" id="city" value="London">
+        <button onclick="testWeatherApi()">Get Weather</button>
+      </div>
+      <pre id="weather-result">Results will appear here</pre>
+    </div>
+    
+    <!-- Location Search API -->
+    <div class="api-section">
+      <h2>Location Search API</h2>
+      <div>
+        <label for="location-query">Search Query:</label>
+        <input type="text" id="location-query" value="Eiffel Tower">
+        <button onclick="testLocationSearchApi()">Search Locations</button>
+      </div>
+      <pre id="location-result">Results will appear here</pre>
+    </div>
+    
+    <!-- Routing API -->
+    <div class="api-section">
+      <h2>Routing API</h2>
+      <div>
+        <label for="origin">Origin (lat,lng):</label>
+        <input type="text" id="origin" value="52.52001,13.40495">
+        <label for="destination">Destination (lat,lng):</label>
+        <input type="text" id="destination" value="48.13743,11.57549">
+        <button onclick="testRoutingApi()">Get Route</button>
+      </div>
+      <pre id="routing-result">Results will appear here</pre>
+    </div>
+    
+    <!-- GROQ API -->
+    <div class="api-section">
+      <h2>GROQ API</h2>
+      <div>
+        <label for="groq-input">Message:</label>
+        <textarea id="groq-input" rows="3">Tell me a short joke</textarea>
+        <button onclick="testGroqApi()">Get Response</button>
+      </div>
+      <pre id="groq-result">Results will appear here</pre>
+    </div>
+  </div>
+
+  <script>
+    // Base URL for API
+    const API_BASE_URL = 'http://localhost:5000/api';
+    
+    // Check server status when page loads
+    window.onload = async function() {
+      await checkServerStatus();
+    };
+    
+    // Function to check server status
+    async function checkServerStatus() {
+      const statusDiv = document.getElementById('server-status');
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/health`);
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'ok') {
+          statusDiv.innerHTML = `<div class="status success">✅ Server is running: ${data.message}</div>`;
+        } else {
+          statusDiv.innerHTML = `<div class="status error">❌ Server is not responding correctly: ${data.message || 'Unknown error'}</div>`;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">❌ Cannot connect to server at ${API_BASE_URL}. Make sure it is running.</div>`;
+        console.error('Server status error:', error);
+      }
+    }
+    
+    // Test the Weather API
+    async function testWeatherApi() {
+      const resultElement = document.getElementById('weather-result');
+      const city = document.getElementById('city').value.trim();
+      
+      if (!city) {
+        resultElement.textContent = 'Please enter a city name';
+        return;
+      }
+      
+      resultElement.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/weather?city=${encodeURIComponent(city)}`);
+        const data = await response.json();
+        
+        resultElement.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+        console.error('Weather API Error:', error);
+      }
+    }
+    
+    // Test the Location Search API
+    async function testLocationSearchApi() {
+      const resultElement = document.getElementById('location-result');
+      const query = document.getElementById('location-query').value.trim();
+      
+      if (!query) {
+        resultElement.textContent = 'Please enter a search query';
+        return;
+      }
+      
+      resultElement.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/location/search?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        resultElement.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+        console.error('Location Search API Error:', error);
+      }
+    }
+    
+    // Test the Routing API
+    async function testRoutingApi() {
+      const resultElement = document.getElementById('routing-result');
+      const origin = document.getElementById('origin').value.trim();
+      const destination = document.getElementById('destination').value.trim();
+      
+      if (!origin || !destination) {
+        resultElement.textContent = 'Please enter both origin and destination';
+        return;
+      }
+      
+      resultElement.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/route?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
+        );
+        const data = await response.json();
+        
+        // Show a simplified version of the result (route data can be very large)
+        const simplifiedData = { ...data };
+        if (simplifiedData.polyline) {
+          simplifiedData.polyline = simplifiedData.polyline.substring(0, 100) + '... (truncated)';
+        }
+        if (simplifiedData.raw_data) {
+          delete simplifiedData.raw_data;
+        }
+        
+        resultElement.textContent = JSON.stringify(simplifiedData, null, 2);
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+        console.error('Routing API Error:', error);
+      }
+    }
+    
+    // Test the GROQ API
+    async function testGroqApi() {
+      const resultElement = document.getElementById('groq-result');
+      const userInput = document.getElementById('groq-input').value.trim();
+      
+      if (!userInput) {
+        resultElement.textContent = 'Please enter a message';
+        return;
+      }
+      
+      resultElement.textContent = 'Loading...';
+      
+      try {
+        const messages = [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: userInput }
+        ];
+        
+        const response = await fetch(`${API_BASE_URL}/groq`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messages }),
+        });
+        
+        const data = await response.json();
+        resultElement.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+        console.error('GROQ API Error:', error);
+      }
+    }
+  </script>
+</body>
+</html> 

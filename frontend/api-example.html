@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Integration Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    section {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #3498db;
+      margin-top: 0;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px 0;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    input, select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 5px 0;
+      width: 250px;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .error {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    .success {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    .flex {
+      display: flex;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>API Integration Example</h1>
+    
+    <section id="server-status">
+      <h2>Server Status</h2>
+      <button id="check-status">Check API Health</button>
+      <div id="status-result"></div>
+    </section>
+
+    <section id="weather-section">
+      <h2>Weather API</h2>
+      <input type="text" id="weather-city" placeholder="Enter city name" value="London">
+      <button id="get-weather">Get Weather</button>
+      <pre id="weather-result"></pre>
+    </section>
+
+    <section id="location-section">
+      <h2>Location Search</h2>
+      <input type="text" id="location-query" placeholder="Enter search term" value="Berlin">
+      <button id="search-location">Search Locations</button>
+      <pre id="location-result"></pre>
+    </section>
+
+    <section id="route-section">
+      <h2>Route Calculator</h2>
+      <div class="flex">
+        <input type="text" id="route-start" placeholder="Start coordinates (lat,lng)" value="52.52001,13.40495">
+        <input type="text" id="route-end" placeholder="End coordinates (lat,lng)" value="48.13743,11.57549">
+      </div>
+      <button id="get-route">Get Route</button>
+      <pre id="route-result"></pre>
+    </section>
+
+    <section id="ai-section">
+      <h2>GROQ AI API</h2>
+      <textarea id="ai-prompt" placeholder="Enter your message here">Hello, can you tell me a joke?</textarea>
+      <button id="ask-ai">Send Message</button>
+      <pre id="ai-result"></pre>
+    </section>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script>
+    // Server Status
+    document.getElementById('check-status').addEventListener('click', async () => {
+      const statusDiv = document.getElementById('status-result');
+      statusDiv.innerHTML = 'Checking...';
+      
+      try {
+        const isUp = await checkApiHealth();
+        statusDiv.innerHTML = isUp ? 
+          '<span class="success">✓ API server is running</span>' : 
+          '<span class="error">✗ API server is not responding</span>';
+      } catch (error) {
+        statusDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    });
+
+    // Weather API
+    document.getElementById('get-weather').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('weather-result');
+      const city = document.getElementById('weather-city').value;
+      
+      if (!city) {
+        resultDiv.innerHTML = '<span class="error">Please enter a city name</span>';
+        return;
+      }
+      
+      resultDiv.innerHTML = 'Loading...';
+      
+      try {
+        const data = await getWeather(city);
+        resultDiv.innerHTML = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    });
+
+    // Location Search
+    document.getElementById('search-location').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('location-result');
+      const query = document.getElementById('location-query').value;
+      
+      if (!query) {
+        resultDiv.innerHTML = '<span class="error">Please enter a search term</span>';
+        return;
+      }
+      
+      resultDiv.innerHTML = 'Loading...';
+      
+      try {
+        const data = await searchLocations(query);
+        resultDiv.innerHTML = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    });
+
+    // Route Calculator
+    document.getElementById('get-route').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('route-result');
+      const start = document.getElementById('route-start').value;
+      const end = document.getElementById('route-end').value;
+      
+      if (!start || !end) {
+        resultDiv.innerHTML = '<span class="error">Please enter both start and end coordinates</span>';
+        return;
+      }
+      
+      resultDiv.innerHTML = 'Loading...';
+      
+      try {
+        const data = await getRoute(start, end);
+        resultDiv.innerHTML = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    });
+
+    // GROQ AI API
+    document.getElementById('ask-ai').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('ai-result');
+      const prompt = document.getElementById('ai-prompt').value;
+      
+      if (!prompt) {
+        resultDiv.innerHTML = '<span class="error">Please enter a message</span>';
+        return;
+      }
+      
+      resultDiv.innerHTML = 'Thinking...';
+      
+      try {
+        const messages = [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: prompt }
+        ];
+        
+        const response = await getGroqResponse(messages);
+        resultDiv.innerHTML = response.content;
+      } catch (error) {
+        resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    });
+
+    // Check status on page load
+    document.getElementById('check-status').click();
+  </script>
+</body>
+</html> 
